@@ -1,4 +1,3 @@
-# carregar_base_compras.py
 import pandas as pd
 import sys
 import os
@@ -72,4 +71,5 @@ def preparar_base_compras(arquivo_excel_bytesio):
     # --- NÃO HÁ MAIS SQLITE ---
     # O banco de dados agora é o DataFrame que estamos retornando
     
+
     return df_compras
