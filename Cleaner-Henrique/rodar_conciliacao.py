@@ -3,6 +3,16 @@ import re
 import os
 import sys
 import io 
+
+# --- FIX: Adiciona o diretório do script ao path ---
+try:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    SCRIPT_DIR = os.getcwd()
+if SCRIPT_DIR not in sys.path:
+    sys.path.append(SCRIPT_DIR)
+# --- FIM DO FIX ---
+
 from firebase_utils import get_db # <-- REMOVA O PONTO
 
 # --- Imports da função robusta (XML) ---
@@ -404,5 +414,6 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml):
     else:
         output_stream.seek(0)
         return output_stream, False
+
 
 
