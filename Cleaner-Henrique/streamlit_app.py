@@ -11,8 +11,8 @@ from rodar_conciliacao import rodar_conciliacao_streamlit
 
 # --- Configurações da Página (AGORA COM FAVICON!) ---
 # Caminhos para os assets
-LOGO_PATH = "assets/logo_empresa.png" # Verifique se o nome do arquivo está correto
-FAVICON_PATH = "assets/favicon.png"   # Verifique se o nome do arquivo está correto
+LOGO_PATH = "assets/logo.png" # Verifique se o nome do arquivo está correto
+FAVICON_PATH = "assets/icone.ico"   # Verifique se o nome do arquivo está correto
 
 # Verifica se os arquivos existem antes de tentar usá-los
 favicon_icon = FAVICON_PATH if os.path.exists(FAVICON_PATH) else None
@@ -247,4 +247,5 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
 
