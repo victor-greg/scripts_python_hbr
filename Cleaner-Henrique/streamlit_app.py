@@ -84,7 +84,7 @@ with st.sidebar:
     st.subheader("Sobre este App")
     st.info(
         "Este aplicativo foi desenvolvido para conciliar títulos TOTVS "
-        "com base em sua planilha de compras. Siga os passos para gerar o relatório final."
+        "com base em sua planilha de compras. Siga os passos para gerar o relatório final.")
     st.markdown("---")
     st.write("Versão 2.0 (Firebase)")
 
@@ -200,3 +200,4 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
