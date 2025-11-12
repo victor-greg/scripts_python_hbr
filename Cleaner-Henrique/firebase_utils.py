@@ -46,3 +46,41 @@ def init_firebase_app():
     except Exception as e:
         st.error(f"Erro inesperado ao inicializar o Firebase: {e}")
         return None
+# (No final de firebase_utils.py)
+import pandas as pd
+
+COLECAO_FIRESTORE = 'base_compras'
+
+def query_base_compras(fornecedor=None, documento=None, filial=None):
+    """
+    Busca a base de compras no Firestore, aplicando filtros de IGUALDADE.
+    """
+    db = get_db()
+    if db is None:
+        raise Exception("Não foi possível conectar ao Firestore.")
+    
+    query = db.collection(COLECAO_FIRESTORE)
+    
+    # IMPORTANTE: Estes nomes de colunas ('Forn_Cliente', 'Documento', 'Filial')
+    # devem ser os nomes exatos das chaves no seu Firestore (ou seja, os nomes
+    # das colunas limpas do seu Excel). Ajuste se necessário.
+    
+    if fornecedor:
+        # Assumindo que o nome da coluna no Firestore é 'Forn_Cliente'
+        query = query.where('Forn_Cliente', '==', fornecedor)
+    if documento:
+        # Assumindo que o nome da coluna no Firestore é 'Documento'
+        query = query.where('Documento', '==', documento)
+    if filial:
+        # Assumindo que o nome da coluna no Firestore é 'Filial'
+        query = query.where('Filial', '==', filial)
+    
+    print(f"Executando query no Firestore (Fornecedor={fornecedor}, Documento={documento}, Filial={filial})...")
+    docs = query.stream()
+    dados = [doc.to_dict() for doc in docs]
+    print(f"Query retornou {len(dados)} documentos.")
+    
+    if not dados:
+        return pd.DataFrame()
+        
+    return pd.DataFrame(dados)
