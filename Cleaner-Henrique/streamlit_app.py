@@ -1,4 +1,3 @@
-# streamlit_app.py
 import streamlit as st
 import pandas as pd
 import tempfile
@@ -248,3 +247,4 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
