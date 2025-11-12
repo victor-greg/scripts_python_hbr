@@ -3,7 +3,7 @@ import re
 import os
 import sys
 import io 
-from .firebase_utils import get_db # <-- ADICIONE O PONTO
+from firebase_utils import get_db # <-- REMOVA O PONTO
 
 # --- Imports da função robusta (XML) ---
 import xml.etree.ElementTree as ET
@@ -404,4 +404,5 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml):
     else:
         output_stream.seek(0)
         return output_stream, False
+
 
