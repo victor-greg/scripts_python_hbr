@@ -1,7 +1,7 @@
 import pandas as pd
 import sys
 import re
-from firebase_utils import get_db # <-- Importa nossa nova função
+from .firebase_utils import get_db # <-- ADICIONE O PONTO
 
 # --- Configurações ---
 NOME_DA_PLANILHA_EXCEL = 'Dados' 
@@ -131,3 +131,4 @@ def carregar_base_firebase(df, modo_execucao='replace'):
     batch.commit()
     print(f"Upload concluído! Total de {total_carregado} registros salvos no Firebase.")
     return True
+
