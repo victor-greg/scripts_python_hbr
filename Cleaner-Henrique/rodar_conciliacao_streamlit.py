@@ -1,4 +1,3 @@
-# rodar_conciliacao.py
 import pandas as pd
 import re 
 import os
@@ -449,4 +448,5 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     else:
         # Se openpyxl não estiver disponível, retorna o arquivo sem formatação
         output_stream.seek(0)
+
         return output_stream, False
