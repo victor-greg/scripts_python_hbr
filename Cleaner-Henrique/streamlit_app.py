@@ -9,10 +9,18 @@ from PIL import Image # Para manipular a imagem da logo
 from carregar_base_compras import preparar_base_compras
 from rodar_conciliacao import rodar_conciliacao_streamlit
 
-# --- Configurações da Página (AGORA COM FAVICON!) ---
-# Caminhos para os assets
-LOGO_PATH = "assets/logo.png" # Verifique se o nome do arquivo está correto
-FAVICON_PATH = "assets/icone.ico"   # Verifique se o nome do arquivo está correto
+# --- DEFINIÇÃO DE CAMINHO ABSOLUTO (A PROVA DE FALHAS) ---
+# Pega o caminho do diretório onde este script (streamlit_app.py) está
+try:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    # Se __file__ não estiver definido (ex: em alguns notebooks), usa o CWD
+    SCRIPT_DIR = os.getcwd()
+
+# Constrói o caminho completo para os assets, não importa de onde o script rode
+LOGO_PATH = os.path.join(SCRIPT_DIR, "assets", "logo.png") 
+FAVICON_PATH = os.path.join(SCRIPT_DIR, "assets", "icone.ico")   
+# --- FIM DA CORREÇÃO ---
 
 # Verifica se os arquivos existem antes de tentar usá-los
 favicon_icon = FAVICON_PATH if os.path.exists(FAVICON_PATH) else None
@@ -103,29 +111,21 @@ st.markdown("""
 
 # --- Barra Lateral (Sidebar) com Logo ---
 with st.sidebar:
+    # Esta verificação agora vai funcionar
     if os.path.exists(LOGO_PATH):
         try:
-            # Carrega a imagem e redimensiona para se ajustar melhor à sidebar
             logo = Image.open(LOGO_PATH)
-            # Calcula a nova largura e altura mantendo a proporção
-            width_percent = (100 / float(logo.size[0]))
-            new_height = int((float(logo.size[1]) * float(width_percent)))
-            # Ajusta a largura máxima para se adequar à sidebar
-            st.image(logo, use_column_width='always', caption="Logo da Empresa")
+            # Usei 'always' para garantir que ele se ajuste à largura
+            st.image(logo, use_column_width='always') 
         except Exception as e:
-            st.warning(f"Não foi possível carregar a logo em '{LOGO_PATH}': {e}")
-            st.header("Logo da Empresa") # Fallback se a imagem falhar
+            st.warning(f"Erro ao carregar a logo de '{LOGO_PATH}': {e}")
     else:
-        st.header("Logo da Empresa") # Fallback se o arquivo não existir
+        # Se ainda falhar, este erro vai nos dizer o caminho exato que ele procurou
+        st.error(f"Logo não encontrada. Caminho procurado: {LOGO_PATH}")
+        st.header("Logo da Empresa") # Fallback
     
     st.markdown("---")
-    st.subheader("Sobre este App")
-    st.info(
-        "Este aplicativo foi desenvolvido para conciliar títulos TOTVS "
-        "com base em sua planilha de compras. Siga os passos para gerar o relatório final."
-    )
-    st.markdown("---")
-    st.write("Versão 1.0.0")
+    st.write("Versão 1.0.2")
 
 # --- Título Principal ---
 st.title("🚀 Conciliador de Títulos TOTVS")
@@ -247,5 +247,6 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
 
 
