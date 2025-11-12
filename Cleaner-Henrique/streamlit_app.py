@@ -89,6 +89,7 @@ st.markdown("""
     /* Estilo para a barra lateral */
     [data-testid="stSidebar"] {
         background-color: #f0f2f6; /* Um cinza claro */
+        color: #000000; /* <-- Define todo o texto da sidebar como PRETO */
     }
     [data-testid="stSidebar"] .stImage {
         margin-top: -30px; /* Ajusta a posição da logo na sidebar */
@@ -125,6 +126,10 @@ with st.sidebar:
         st.header("Logo da Empresa") # Fallback
     
     st.markdown("---")
+    st.subheader("Sobre este App")
+    st.info(
+        "Este aplicativo foi desenvolvido para conciliar títulos TOTVS "
+        "com base em sua planilha de compras. Siga os passos para gerar o relatório final."
     st.write("Versão 1.0.2")
 
 # --- Título Principal ---
@@ -247,6 +252,7 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
 
 
 
