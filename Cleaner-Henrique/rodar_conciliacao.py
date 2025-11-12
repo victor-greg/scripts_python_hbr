@@ -2,7 +2,7 @@ import pandas as pd
 import re 
 import os
 import sys
-import io # <-- Novo import
+import io # <-- Essencial para o Streamlit
 
 # --- Imports da função robusta (XML) ---
 import xml.etree.ElementTree as ET
@@ -181,7 +181,7 @@ def formatar_data_br(data_str):
     except Exception:
         return data_str
 
-# --- FUNÇÃO DE FORMATAÇÃO ATUALIZADA ---
+# --- FUNÇÃO DE FORMATAÇÃO ATUALIZADA (para BytesIO) ---
 def aplicar_formatacao_excel(workbook, colunas_formato):
     """
     Recebe um objeto Workbook do OpenPyXL (em vez de um caminho)
@@ -223,7 +223,7 @@ def aplicar_formatacao_excel(workbook, colunas_formato):
         return workbook # Retorna o workbook original
 
 
-# --- FUNÇÃO PRINCIPAL (REFATORADA PARA STREAMLIT) ---
+# --- FUNÇÃO PRINCIPAL (REFATORADA PARA STREAMLIT E COM NOVAS MUDANÇAS) ---
 
 def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     """
@@ -261,13 +261,12 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
         if col in df_xml.columns:
             df_xml[col] = df_xml[col].astype(str).str.strip().fillna('')
     
-    colunas_finais_xml = list(df_xml.columns) + ['Vlr Rateado']
+    # --- (MUDANÇA 1) Adiciona 'Filial' à lista de colunas esperadas ---
+    colunas_finais_xml = list(df_xml.columns) + ['Vlr Rateado', 'Filial']
     xml_keys = ['Código', 'Documento'] 
 
     # --- 2. Preparação do Arquivo B (DataFrame da Memória) ---
     print(f"Usando a Base de Compras (df_compras) da memória...")
-    # Não há mais leitura de SQLite. O df_compras já foi limpo no passo anterior,
-    # mas garantimos a limpeza das chaves aqui.
     
     col_forn_db = COLUNAS_CHAVE_EXCEL['codigo_fornecedor']
     col_doc_db = COLUNAS_CHAVE_EXCEL['numero_documento']
@@ -280,7 +279,8 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     df_xml['Código'] = df_xml['Código'].astype(str).str.lstrip('0').str.strip().fillna('')
     df_xml['Documento'] = df_xml['Documento'].astype(str).str.lstrip('0').str.strip().fillna('')
     
-    colunas_texto_db = ['Centro Custo', 'C Contabil', 'Item Conta', 'Loja']
+    # --- (MUDANÇA 2) Adiciona 'Filial' à lista de colunas de texto do DB ---
+    colunas_texto_db = ['Centro Custo', 'C Contabil', 'Item Conta', 'Loja', 'Filial']
     for col in colunas_texto_db:
         if col in df_compras.columns:
             df_compras[col] = df_compras[col].astype(str).str.strip().fillna('')
@@ -288,6 +288,7 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     if 'Vlr.Total' not in df_compras.columns:
         print("Aviso: Coluna 'Vlr.Total' não encontrada no df_compras.")
         df_compras['Vlr.Total'] = 0.0
+    # A coluna 'Vlr.Total' já foi convertida para numérico no carregar_base_compras.py
     
     # --- Pré-cálculo ANTES do merge (Lógica idêntica) ---
     print("Pré-calculando contagem de rateios...")
@@ -333,7 +334,7 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     condicao_com_rateio = (df_merged['db_match_count'] > 1)
     df_final_com_rateio = df_merged[condicao_com_rateio].copy()
 
-    # --- 5. Mapeamento e AGRUPAMENTO (Lógica idêntica) ---
+    # --- 5. Mapeamento e AGRUPAMENTO (LÓGICA ATUALIZADA) ---
     if not df_final_com_rateio.empty:
         print("Agrupando e somando títulos rateados...")
         col_titulos_vencer_xml = 'Titulos a vencer Valor nominal_xml' if 'Titulos a vencer Valor nominal_xml' in df_final_com_rateio.columns else 'Titulos a vencer Valor nominal'
@@ -345,7 +346,9 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
         col_loja_db = 'Loja_db' if 'Loja_db' in df_final_com_rateio.columns else 'Loja'
         col_vlr_db = 'Vlr.Total' 
 
-        grouping_keys = ['_xml_row_id', col_item_db, col_cc_db, col_cta_db, col_loja_db]
+        # --- (MUDANÇA 3) Adiciona 'Filial' às chaves de agrupamento ---
+        col_filial_db = 'Filial' # Não terá sufixo, pois não existe no XML
+        grouping_keys = ['_xml_row_id', col_item_db, col_cc_db, col_cta_db, col_loja_db, col_filial_db]
         
         agg_funcs = { 
             col_vlr_db: 'sum', 
@@ -353,10 +356,12 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
             'Valor_Pago_Num': 'first',
             'Código': 'first', 
             'Documento': 'first',
-            'Parcela': 'first'
+            'Parcela': 'first',
+            'Filial': 'first' # <-- Adiciona 'Filial' às funções de agregação
         }
         
-        xml_cols_to_keep = [col for col in colunas_finais_xml if col not in ['Código', 'Documento', 'Parcela', 'Vlr Rateado', '_xml_row_id']]
+        # --- (MUDANÇA 3 cont.) Atualiza cols_to_keep ---
+        xml_cols_to_keep = [col for col in colunas_finais_xml if col not in ['Código', 'Documento', 'Parcela', 'Vlr Rateado', '_xml_row_id', 'Filial']]
         
         for col in df_final_com_rateio.columns:
             if col.endswith('_xml') and col not in agg_funcs:
@@ -402,7 +407,9 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     
     colunas_novas = ['Código', 'Loja', 'Nome do Fornecedor', 'Documento', 'Parcela']
     colunas_originais_xml = list(df_xml.drop(columns=colunas_novas + ['_xml_row_id'], errors='ignore').columns)
-    ordem_final = colunas_novas + colunas_originais_xml + ['Vlr Rateado']
+    
+    # --- (MUDANÇA 4) Adiciona 'Filial' à ordem final ---
+    ordem_final = colunas_novas + colunas_originais_xml + ['Vlr Rateado', 'Filial']
     colunas_existentes_na_ordem = [col for col in ordem_final if col in df_final.columns]
     
     df_final = df_final[colunas_existentes_na_ordem]
@@ -448,5 +455,4 @@ def rodar_conciliacao_streamlit(caminho_arquivo_xml, df_compras):
     else:
         # Se openpyxl não estiver disponível, retorna o arquivo sem formatação
         output_stream.seek(0)
-
         return output_stream, False
