@@ -2,20 +2,22 @@ import streamlit as st
 import pandas as pd
 import tempfile
 import os
+import sys
 import io
 from PIL import Image 
 
 # --- Importações de Lógica (Modificadas) ---
 # Usamos o . para importação relativa (assumindo que __init__.py existe)
-from .carregar_base_compras import ler_excel_para_df, carregar_base_firebase
-from .rodar_conciliacao import rodar_conciliacao_streamlit
-from .firebase_utils import get_db # Importamos só para verificar a conexão
+from carregar_base_compras import ler_excel_para_df, carregar_base_firebase
+from rodar_conciliacao import rodar_conciliacao_streamlit
+from firebase_utils import get_db
 
 # --- DEFINIÇÃO DE CAMINHO ABSOLUTO (A PROVA DE FALHAS) ---
 try:
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 except NameError:
     SCRIPT_DIR = os.getcwd()
+sys.path.append(SCRIPT_DIR) # <-- 2. ADICIONE ESTA LINHA
 
 LOGO_PATH = os.path.join(SCRIPT_DIR, "assets", "logo.png") 
 FAVICON_PATH = os.path.join(SCRIPT_DIR, "assets", "icone.ico")   
@@ -200,4 +202,5 @@ with col2:
 
 st.markdown("---")
 st.markdown("Desenvolvido com ❤️ para otimizar suas operações.")
+
 
