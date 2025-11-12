@@ -3,7 +3,6 @@ import pandas as pd
 import re
 import io
 import os  # Importado para verificar o caminho da logo
-import xlsxwriter 
 import xml.etree.ElementTree as ET 
 from datetime import datetime
 
@@ -309,4 +308,5 @@ if uploaded_file:
             data=excel_data,
             file_name=new_filename,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
         )
