@@ -2,10 +2,21 @@ import streamlit as st
 import pandas as pd
 import re
 import io
-import os  # Importado para verificar o caminho da logo
-import xlsxwriter
+import os  # Importado para o caminho da logo
+import xlsxwriter 
 import xml.etree.ElementTree as ET 
 from datetime import datetime
+
+# --- OBTÉM O CAMINHO DO SCRIPT (PARA ACHAR OS ASSETS) ---
+try:
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    SCRIPT_DIR = os.getcwd()
+
+# --- CAMINHOS DOS ASSETS ---
+LOGO_PATH = os.path.join(SCRIPT_DIR, "assets", "logo.png") 
+
+# --- (Suas funções de lógica permanecem 100% iguais) ---
 
 def _read_xml_with_elementtree(uploaded_file):
     """
@@ -24,7 +35,6 @@ def _read_xml_with_elementtree(uploaded_file):
             'ss': 'urn:schemas-microsoft-com:office:spreadsheet'
         }
         
-        # 1. Encontra a planilha correta pelo nome
         ws_name = '3-Lançamentos Contábeis'
         worksheet = None
         for ws in root.findall('d:Worksheet', ns_map):
@@ -47,7 +57,6 @@ def _read_xml_with_elementtree(uploaded_file):
             st.error("Erro Crítico: Planilha não contém linhas de cabeçalho ou dados.")
             return None
 
-        # 2. Pega os cabeçalhos da segunda linha (index 1)
         headers = []
         header_cells = rows[1].findall('d:Cell', ns_map)
         for cell in header_cells:
@@ -55,31 +64,26 @@ def _read_xml_with_elementtree(uploaded_file):
             if data is not None and data.text is not None:
                 headers.append(data.text)
             else:
-                headers.append(f"Coluna_Vazia_{len(headers)}") # Fallback
+                headers.append(f"Coluna_Vazia_{len(headers)}")
 
-        # 3. Processa as linhas de dados (começando do index 2)
         data_list = []
         for row_elem in rows[2:]:
             cells = row_elem.findall('d:Cell', ns_map)
-            if not cells:
-                continue # Pula linhas em branco
+            if not cells: continue
                 
             row_data = {}
             for i, cell in enumerate(cells):
-                if i >= len(headers):
-                    break # Mais células que cabeçalhos, ignora
+                if i >= len(headers): break
                 
                 data_elem = cell.find('d:Data', ns_map)
                 text = data_elem.text if data_elem is not None else None
                 
-                # Pega o tipo de dado do XML para conversão correta
-                data_type = 'String' # Default
+                data_type = 'String'
                 if data_elem is not None:
-                    # O tipo está no atributo 'ss:Type'
                     data_type = data_elem.attrib.get(f'{{{ns_map["ss"]}}}Type', 'String')
                 
                 val = text
-                if text is not None: # Só processa se houver texto
+                if text is not None:
                     if data_type == 'DateTime':
                         val = pd.to_datetime(text) 
                     elif data_type == 'Number':
@@ -99,7 +103,6 @@ def _read_xml_with_elementtree(uploaded_file):
 
     except ET.ParseError as e:
         st.error(f"Erro ao processar o XML: {e}")
-        st.info("O arquivo pode estar corrompido ou não ser um XML válido (SpreadsheetML).")
         return None
     except Exception as e:
         st.error(f"Um erro inesperado ocorreu during a leitura do XML com ElementTree:")
@@ -163,7 +166,6 @@ def processar_arquivo_xml(uploaded_file):
 
     df_processed['CRED/DEB'] = df_processed.apply(calcular_cred_deb, axis=1)
 
-    # --- CORREÇÃO AQUI: Arredondar valores para 2 casas decimais ---
     df_processed['DEBITO'] = df_processed['DEBITO'].round(2)
     df_processed['CREDITO'] = df_processed['CREDITO'].round(2)
     df_processed['CRED/DEB'] = df_processed['CRED/DEB'].round(2)
@@ -208,10 +210,8 @@ def criar_excel_estilizado(df):
     workbook = writer.book
     
     font_base = {'font_name': 'Courier New', 'font_size': 10}
-    note_bg = '#FFFFE0' # Amarelo (Estilo "Nota")
-    
-    # --- CORREÇÃO AQUI: Removido o '[Red]' do formato negativo ---
-    acc_fmt_str = '#.##0,00;-#.##0,00;0,00' # Formato Contábil BR (Negativo em preto)
+    note_bg = '#FFFFE0' 
+    acc_fmt_str = '#.##0,00;-#.##0,00;0,00' 
     
     text_format = workbook.add_format({**font_base, 'num_format': '@'})
     date_format = workbook.add_format({**font_base, 'num_format': 'dd/mm/yyyy'})
@@ -256,58 +256,82 @@ def criar_excel_estilizado(df):
     
     return output
 
-# --- INTERFACE DO STREAMLIT ---
+# --- FIM DAS FUNÇÕES DE LÓGICA ---
+
+
+# ==========================================================
+# --- NOVA INTERFACE DO STREAMLIT (COM SIDEBAR) ---
+# ==========================================================
 
 st.set_page_config(layout="wide", page_title="Limpador de XML Contábil")
 
-col1, col2 = st.columns([1, 5])
-with col1:
-    # --- CORREÇÃO AQUI: Caminho da logo ---
-    logo_path = "assets/logo.png"
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=100)
+# --- 1. BARRA LATERAL (SIDEBAR) ---
+with st.sidebar:
+    st.title("Limpador de Razão")
+    
+    if os.path.exists(LOGO_PATH):
+        st.image(LOGO_PATH, use_column_width=True)
     else:
-        st.image(
-            "https://upload.wikimedia.org/wikipedia/commons/c/c2/Office_apps_logo_2019.svg",
-            width=100
-        )
         st.warning("Logo não encontrada em 'assets/logo.png'.")
+        
+    st.divider()
 
-with col2:
+    # --- O menu de navegação que você pediu ---
+    app_mode = st.radio(
+        "Navegação",
+        ["Limpador de XML", "Outra Funcionalidade (Futuro)", "Sobre"]
+    )
+    
+    st.divider()
+    st.write("Versão 1.0") # <-- A versão do app
+
+# --- 2. CONTEÚDO PRINCIPAL (BASEADO NA NAVEGAÇÃO) ---
+
+if app_mode == "Limpador de XML":
+    
+    # --- Coloquei o código antigo da sua UI aqui ---
     st.title("Ferramenta de Limpeza de XML Contábil")
     st.markdown("**Faça o upload do seu arquivo XML (formato Excel) para processamento.**")
+    st.divider()
 
-st.divider()
+    uploaded_file = st.file_uploader(
+        "Selecione o arquivo XML (exportado pelo Protheus)", 
+        type=["xml", "xls", "xlsx"]
+    )
 
-uploaded_file = st.file_uploader(
-    "Selecione o arquivo XML (exportado pelo Protheus)", 
-    type=["xml", "xls", "xlsx"]
-)
-
-if uploaded_file:
-    with st.spinner("Processando o arquivo com ElementTree... ⚙️"):
-        df_final = processar_arquivo_xml(uploaded_file)
-    
-    if df_final is not None:
-        st.success("Arquivo processado com sucesso! 🎉")
+    if uploaded_file:
+        with st.spinner("Processando o arquivo com ElementTree... ⚙️"):
+            df_final = processar_arquivo_xml(uploaded_file)
         
-        st.subheader("Prévia dos Dados Processados")
-        st.dataframe(df_final.head(50))
+        if df_final is not None:
+            st.success("Arquivo processado com sucesso! 🎉")
+            
+            st.subheader("Prévia dos Dados Processados")
+            st.dataframe(df_final.head(50))
 
-        st.subheader("Download do Arquivo Limpo")
-        st.info("O arquivo abaixo está no formato .xlsx e contém todas as formatações solicitadas.")
-        
-        with st.spinner("Gerando arquivo Excel estilizado... 🎨"):
-            excel_data = criar_excel_estilizado(df_final)
-        
-        # Gera o nome do novo arquivo
-        original_name = os.path.splitext(uploaded_file.name)[0]
-        new_filename = f"LIMPADO_{original_name}.xlsx"
-        
-        st.download_button(
-            label="Clique aqui para baixar o .xlsx Processado",
-            data=excel_data,
-            file_name=new_filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            st.subheader("Download do Arquivo Limpo")
+            st.info("O arquivo abaixo está no formato .xlsx e contém todas as formatações solicitadas.")
+            
+            with st.spinner("Gerando arquivo Excel estilizado... 🎨"):
+                excel_data = criar_excel_estilizado(df_final)
+            
+            # Gera o nome do novo arquivo
+            original_name = os.path.splitext(uploaded_file.name)[0]
+            new_filename = f"LIMPADO_{original_name}.xlsx"
+            
+            st.download_button(
+                label="Clique aqui para baixar o .xlsx Processado",
+                data=excel_data,
+                file_name=new_filename,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
+# --- Exemplo de como adicionar uma nova "janela" ---
+elif app_mode == "Outra Funcionalidade (Futuro)":
+    st.title("Outra Funcionalidade 🚀")
+    st.write("Esta página está em construção.")
+    st.info("Quando você quiser criar uma nova ferramenta, basta adicioná-la aqui.")
+
+elif app_mode == "Sobre":
+    st.title("Sobre o App")
+    st.write("Este aplicativo foi criado para limpar e formatar arquivos XML contábeis exportados do TOTVS.")
