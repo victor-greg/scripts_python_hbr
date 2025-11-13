@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 import io
-import os  # Importado para o caminho da logo
+import os  
 import xlsxwriter 
 import xml.etree.ElementTree as ET 
 from datetime import datetime
@@ -260,12 +260,17 @@ def criar_excel_estilizado(df):
 
 
 # ==========================================================
-# --- NOVA INTERFACE DO STREAMLIT (COM SIDEBAR) ---
+# --- INTERFACE DO STREAMLIT (LÓGICA DOS BOTÕES) ---
 # ==========================================================
 
 st.set_page_config(layout="wide", page_title="Limpador de XML Contábil")
 
-# --- 1. BARRA LATERAL (SIDEBAR) ---
+# --- 1. INICIALIZA O ESTADO (SESSION STATE) ---
+# Isso é o que "lembra" em qual página estamos.
+if 'app_mode' not in st.session_state:
+    st.session_state.app_mode = "Limpador de XML" # Página padrão
+
+# --- 2. BARRA LATERAL (SIDEBAR) ---
 with st.sidebar:
     st.title("Limpador de Razão")
     
@@ -276,18 +281,26 @@ with st.sidebar:
         
     st.divider()
 
-    # --- O menu de navegação que você pediu ---
-    app_mode = st.radio(
-        "Navegação",
-        ["Limpador de XML", "Outra Funcionalidade (Futuro)", "Sobre"]
-    )
+    # --- O menu de navegação com BOTÕES ---
+    # use_container_width=True faz os botões ocuparem a largura da sidebar
+    
+    st.header("Navegação")
+    if st.button("Limpador de XML", use_container_width=True):
+        st.session_state.app_mode = "Limpador de XML"
+
+    if st.button("Outra Funcionalidade (Futuro)", use_container_width=True):
+        st.session_state.app_mode = "Outra Funcionalidade (Futuro)"
+
+    if st.button("Sobre", use_container_width=True):
+        st.session_state.app_mode = "Sobre"
     
     st.divider()
     st.write("Versão 1.0") # <-- A versão do app
 
-# --- 2. CONTEÚDO PRINCIPAL (BASEADO NA NAVEGAÇÃO) ---
+# --- 3. CONTEÚDO PRINCIPAL (BASEADO NO ESTADO) ---
+# O app verifica o valor em st.session_state.app_mode para decidir o que mostrar
 
-if app_mode == "Limpador de XML":
+if st.session_state.app_mode == "Limpador de XML":
     
     # --- Coloquei o código antigo da sua UI aqui ---
     st.title("Ferramenta de Limpeza de XML Contábil")
@@ -327,11 +340,12 @@ if app_mode == "Limpador de XML":
             )
 
 # --- Exemplo de como adicionar uma nova "janela" ---
-elif app_mode == "Outra Funcionalidade (Futuro)":
+elif st.session_state.app_mode == "Outra Funcionalidade (Futuro)":
     st.title("Outra Funcionalidade 🚀")
     st.write("Esta página está em construção.")
     st.info("Quando você quiser criar uma nova ferramenta, basta adicioná-la aqui.")
 
-elif app_mode == "Sobre":
+elif st.session_state.app_mode == "Sobre":
     st.title("Sobre o App")
     st.write("Este aplicativo foi criado para limpar e formatar arquivos XML contábeis exportados do TOTVS.")
+    st.write("Ele usa o ElementTree para ler o XML de forma robusta e o XlsxWriter para criar o arquivo Excel de saída formatado.")
