@@ -295,7 +295,7 @@ with st.sidebar:
         st.session_state.app_mode = "Sobre"
     
     st.divider()
-    st.write("Versão 1.0") # <-- A versão do app
+    st.write("Versão 1.0.10") # <-- A versão do app
 
 # --- 3. CONTEÚDO PRINCIPAL (BASEADO NO ESTADO) ---
 # O app verifica o valor em st.session_state.app_mode para decidir o que mostrar
